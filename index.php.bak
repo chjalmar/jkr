@@ -1,0 +1,162 @@
+﻿<!DOCTYPE html>
+<html>
+    
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+	<title>Base de Datos JKR Mérida</title>
+        <link rel="stylesheet" type="text/css" href="css/style.css">
+        
+		
+	  
+	
+	
+	    
+    
+    
+	
+	
+    </head>    
+    <body>
+        <?php 
+        
+        $con=mysqli_connect("localhost","root","","jkr");
+        mysqli_set_charset($con,"utf8");
+            
+        if (mysqli_connect_errno()){
+          echo "Failed to connect to MySQL: " . mysqli_connect_error();
+        } 
+        
+        $loginform = "<form action=index.php method=post>
+												<p align=center>
+												<input id=username name=username type=search value='' placeholder=Usuario>
+											  </p>
+											  <p align=center>
+												<input id=password name=password type=password value='' placeholder=Contraseña>
+												</p>
+											  <p align=center>
+												<button type=submit>Entrar</button>
+												</p>
+											</form>";
+        
+        ?>
+	
+	      <h1 align=center><img src="images/logo.jpg"></h1>
+        <h1 align=center>Base de Datos JKR Mérida</h1>
+        <br>
+				        
+		<?php
+			if ($_POST) {  
+			  if (isset($_POST['username']) and isset($_POST['password'])) {
+			    //Hicimos login
+			    
+			    $result = mysqli_query($con,"SELECT * FROM usuario where username = '" . $_POST['username'] . "' and password = '". $_POST['password'] ."'");
+			    $row = mysqli_fetch_array($result);
+			    
+			    if ($row) {
+			      ?>
+			      
+			      <form action="index.php" method="post">
+			        <p align=center><input type="submit" name=accion value="Dojos">&nbsp;<input type="submit" name=accion value="Practicantes"></p>
+			      </form>
+			      
+			      <?php
+			    } else {
+			      echo $loginform . "<br><p align=center fontcolor=#FF0000>El usuario / contraseña no existe. Intente de nuevo.</p>";
+			    }  
+			  } else if (isset($_POST['accion'])) {
+			      echo $_POST['accion'];
+			      if ($_POST['accion'] == "Dojos") {
+			        $querystring = "SELECT
+			                        nombre,
+			                        direccion,
+			                        (SELECT concat(nombre, ' ', apellido) FROM practicante where id = dojo.instructor_id) as instructor,
+			                        id
+			                        FROM dojo
+			        
+			        ";
+			  	    $result = mysqli_query($con,$querystring);
+			        
+			        echo "<p align=center><table border=1>
+			              <tr>
+			                <td>Nombre del Dojo</td>
+			                <td>Dirección</td>
+			                <td>Instructor</td>
+			                <td>Acción</td>			                
+			              </tr>";
+			        while($row = mysqli_fetch_array($result)){
+			          //Imprimir listado de Dojos
+			          
+			          echo "
+			            <tr>
+			              <td>".$row['nombre']."</td>
+			              <td>".$row['direccion']."</td>
+			              <td>".$row['instructor']."</td>
+			              <td><form action=index.php method=post><input type=hidden name=accion value=Practicantes><input type=hidden name=dojo_id value=". $row['id'] ."><input type=submit value=Ver Practicantes></form></td>
+			            </tr>
+			          ";
+			            
+			        }
+			      } else if ($_POST['accion'] == "Practicantes") {
+			      	
+			      	$querystring = "SELECT 
+			      	                practicante.ci as ci,
+			      	                practicante.nombre as nombre,
+			      	                practicante.apellido as apellido,
+			      	                (SELECT nombre FROM dojo where id = practicante.dojo_id) as dojo,
+			      	                (SELECT nombre FROM grado WHERE id = practicante.grado_actual_id) as grado_actual
+			      	                FROM practicante
+			      	                
+			      	";
+			      	
+			      	if (isset($_POST['dojo_id'])) {
+			      	  
+			      	  $querystring .= " WHERE dojo_id = " . $_POST['dojo_id'] . " ORDER BY grado_actual_id";	
+			      	  
+			      	} else {
+			      	  $querystring .= " ORDER BY dojo_id";	
+			      	}
+			      	
+			      	
+			      	
+			      	$result = mysqli_query($con,$querystring);
+			        
+			        echo "<p align=center><table border=1>
+			              <tr>
+			                <td>Cédula</td>
+			                <td>Nombres</td>
+			                <td>Apellidos</td>
+			                <td>Dojo</td>
+			                <td>Grado actual</td>
+			              </tr>";
+			        while($row = mysqli_fetch_array($result)){
+			          //Imprimir listado de practicantes
+			          
+			          echo "
+			            <tr>
+			              <td>".$row['ci']."</td>
+			              <td>".$row['nombre']."</td>
+			              <td>".$row['apellido']."</td>
+			              <td>".$row['dojo']."</td>
+			              <td>".$row['grado_actual']."</td>
+			            </tr>
+			          ";
+			            
+			        }
+			      	
+			      }  
+			      echo "</table></p>";
+			    	
+			  }
+			} else {
+			  //Entrada inicial para hacer login	
+			  echo $loginform;
+			}  
+		?>
+		
+		
+		
+        
+    </body>
+</html>
